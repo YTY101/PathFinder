@@ -1,0 +1,43 @@
+#map { height: 700px; }
+
+#button-container{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+#start-btn{
+    position: absolute;
+    bottom: -650px;
+    left: -500px;
+    width: 70px;
+    height: 70px;
+}
+   
+#end-btn{
+    position: absolute;
+    bottom: -650px;
+    left: -400px;
+    width: 70px;
+    height: 70px;
+}   
+
+#test-btn{
+    position: absolute;
+    bottom: -650px;
+    left: -300px;
+    width: 70px;
+    height: 70px;
+}   
+
+#clear-btn{
+    position: absolute;
+    bottom: 170px;
+    left: 10px;
+    width: 70px;
+    height: 70px;
+}   
+
+#title{
+    font-family: monospace;
+}
