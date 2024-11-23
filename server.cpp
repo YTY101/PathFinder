@@ -173,34 +173,22 @@ json handle_render(json request_data) {
 json handle_path(json request_data){
     string start_node_id = request_data["startNodeId"];
     string end_node_id = request_data["endNodeId"];
-    return aStarSearch(start_node_id, end_node_id); 
+
+    json response_data = {
+        {"status", "success"},
+        {"startNodeLat", nodes[start_node_id].lat},
+        {"startNodeLon", nodes[start_node_id].lon},
+        {"startNeighborLat", nodes[start_node_id].lat},
+        {"startNeighborLon", nodes[start_node_id].lon},
+        {"endNodeLat", nodes[end_node_id].lat},
+        {"endNodeLon", nodes[end_node_id].lon},
+        {"endNeighborLat", nodes[end_node_id].lat},
+        {"endNeighborLon", nodes[end_node_id].lon},
+        {"path", aStarSearch(start_node_id, end_node_id)}
+    };
+
+    return response_data; 
 }
-
-// string find_closest_node(double lat, double lon, const std::string& chunk_id) {
-//     // 默认最小距离和最近节点
-//     double min_distance = std::numeric_limits<double>::max();
-//     string closest_node_id = "";
-
-//     // 确保该 chunk 存在并且包含节点
-//     if (chunk_map.find(chunk_id) != chunk_map.end()) {
-//         const Chunk& chunk = chunk_map[chunk_id];
-
-//         // 遍历 chunk 中的所有节点
-//         for (const auto& node : chunk.nodes) {
-//             // 计算当前节点到给定经纬度的距离
-//             double distance = std::sqrt(std::pow(node.lat - lat, 2) + std::pow(node.lon - lon, 2));
-
-//             // 更新最小距离和最近节点
-//             if (distance < min_distance) {
-//                 min_distance = distance;
-//                 closest_node_id = node.id;
-//             }
-//         }
-//     }
-
-//     // 返回找到的最近节点
-//     return closest_node_id;
-// }
 
 string find_closest_node(double lat, double lon, const std::string& chunk_id) {
     // 默认最小距离和最近节点
@@ -265,8 +253,20 @@ json handle_select_path(json request_data) {
     string closest_start_node_id = find_closest_node(start_lat, start_lon, target_start_chunk_id);
     string closest_end_node_id = find_closest_node(end_lat, end_lon, target_end_chunk_id);
 
+    json response_data = {
+        {"status", "success"},
+        {"startNodeLat", start_lat},
+        {"startNodeLon", start_lon},
+        {"startNeighborLat", nodes[closest_start_node_id].lat},
+        {"startNeighborLon", nodes[closest_start_node_id].lon},
+        {"endNodeLat", end_lat},
+        {"endNodeLon", end_lon},
+        {"endNeighborLat", nodes[closest_end_node_id].lat},
+        {"endNeighborLon", nodes[closest_end_node_id].lon},
+        {"path", aStarSearch(closest_start_node_id, closest_end_node_id)}
+    };
 
-    return aStarSearch(closest_start_node_id, closest_end_node_id); 
+    return response_data;
 }
 
 
