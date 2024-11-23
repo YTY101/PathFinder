@@ -176,6 +176,32 @@ json handle_path(json request_data){
     return aStarSearch(start_node_id, end_node_id); 
 }
 
+// string find_closest_node(double lat, double lon, const std::string& chunk_id) {
+//     // 默认最小距离和最近节点
+//     double min_distance = std::numeric_limits<double>::max();
+//     string closest_node_id = "";
+
+//     // 确保该 chunk 存在并且包含节点
+//     if (chunk_map.find(chunk_id) != chunk_map.end()) {
+//         const Chunk& chunk = chunk_map[chunk_id];
+
+//         // 遍历 chunk 中的所有节点
+//         for (const auto& node : chunk.nodes) {
+//             // 计算当前节点到给定经纬度的距离
+//             double distance = std::sqrt(std::pow(node.lat - lat, 2) + std::pow(node.lon - lon, 2));
+
+//             // 更新最小距离和最近节点
+//             if (distance < min_distance) {
+//                 min_distance = distance;
+//                 closest_node_id = node.id;
+//             }
+//         }
+//     }
+
+//     // 返回找到的最近节点
+//     return closest_node_id;
+// }
+
 string find_closest_node(double lat, double lon, const std::string& chunk_id) {
     // 默认最小距离和最近节点
     double min_distance = std::numeric_limits<double>::max();
@@ -185,15 +211,31 @@ string find_closest_node(double lat, double lon, const std::string& chunk_id) {
     if (chunk_map.find(chunk_id) != chunk_map.end()) {
         const Chunk& chunk = chunk_map[chunk_id];
 
-        // 遍历 chunk 中的所有节点
-        for (const auto& node : chunk.nodes) {
-            // 计算当前节点到给定经纬度的距离
-            double distance = std::sqrt(std::pow(node.lat - lat, 2) + std::pow(node.lon - lon, 2));
+        // 遍历 chunk 中的所有 way
+        for (const auto& way : chunk.ways) {
+            // 检查当前 way 的标签中是否包含 "highway"
+            bool has_highway_tag = false;
+            for (const auto& tag : way.tags) {
+                if (tag.first == "highway") {
+                    has_highway_tag = true;
+                    break; // 找到 "highway" 标签后可以退出循环
+                }
+            }
 
-            // 更新最小距离和最近节点
-            if (distance < min_distance) {
-                min_distance = distance;
-                closest_node_id = node.id;
+            if (has_highway_tag) {
+                // 遍历当前 way 中的所有节点引用
+                for (const auto& ref : way.node_refs) {
+                    const auto& node = nodes[ref];
+
+                    // 计算当前节点到给定经纬度的距离
+                    double distance = std::sqrt(std::pow(node.lat - lat, 2) + std::pow(node.lon - lon, 2));
+
+                    // 更新最小距离和最近节点
+                    if (distance < min_distance) {
+                        min_distance = distance;
+                        closest_node_id = node.id;
+                    }
+                }
             }
         }
     }
@@ -201,6 +243,7 @@ string find_closest_node(double lat, double lon, const std::string& chunk_id) {
     // 返回找到的最近节点
     return closest_node_id;
 }
+
 
 json handle_select_path(json request_data) {
     double start_lat = request_data["startLat"];
