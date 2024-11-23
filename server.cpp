@@ -56,10 +56,10 @@ void handle_request(beast::tcp_stream& stream, http::request<http::string_body>&
         if(request_data.contains("task") && request_data["task"]=="render"){
             response_data = handle_render(request_data);
         }else if(request_data.contains("task") && request_data["task"]=="path"){
-            std::cout<<"handle_path"<<request_data<<std::endl;
+            std::cout<<"handle_path"<<std::endl;
             response_data = handle_path(request_data);
         }else if(request_data.contains("task") && request_data["task"]=="select_path"){
-            std::cout<<"handle_select_path"<<request_data<<std::endl;
+            std::cout<<"handle_select_path"<<std::endl;
             // response_data = {
             //     {"status", "success"},
             //     {"received_data", request_data}
@@ -76,7 +76,7 @@ void handle_request(beast::tcp_stream& stream, http::request<http::string_body>&
 
         // 将响应数据序列化为字符串
         std::string response_body = response_data.dump();
-        if(!(request_data.contains("task") && request_data["task"]=="render"))std::cout<<"Response: "<<response_body<<std::endl<<"END"<<std::endl;
+        // if(!(request_data.contains("task") && request_data["task"]=="render"))std::cout<<"Response: "<<response_body<<std::endl<<"END"<<std::endl;
 
         // 创建HTTP响应
         http::response<http::string_body> res{
@@ -242,7 +242,7 @@ json handle_select_path(json request_data) {
     // 获取起点和终点所在的 Chunk ID
     string start_chunk_id = getChunkKey(start_lat, start_lon);
     string end_chunk_id = getChunkKey(end_lat, end_lon);
-    std::cout<<"start_chunk_id: "<<start_chunk_id<<", end_chunk_id: "<<end_chunk_id<<std::endl;
+    // std::cout<<"start_chunk_id: "<<start_chunk_id<<", end_chunk_id: "<<end_chunk_id<<std::endl;
 
     unordered_map<string, bool> visited;
     visited.clear();
