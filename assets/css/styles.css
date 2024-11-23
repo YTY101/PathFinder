@@ -6,7 +6,7 @@
     left: 0px;
 }
 
-#start-btn{
+/* #start-btn{
     position: absolute;
     bottom: -650px;
     left: -500px;
@@ -18,6 +18,22 @@
     position: absolute;
     bottom: -650px;
     left: -400px;
+    width: 70px;
+    height: 70px;
+}    */
+
+#start-btn{
+    position: absolute;
+    bottom: -70px;
+    left: -200px;
+    width: 70px;
+    height: 70px;
+}
+   
+#end-btn{
+    position: absolute;
+    bottom: -70px;
+    left: -100px;
     width: 70px;
     height: 70px;
 }   
@@ -39,5 +55,27 @@
 }   
 
 #title{
-    font-family: monospace;
+    font-family: 'Playfair Display', serif;
+    font-style: italic; /* 设置字体样式为斜体 */
+    font-size: 35px; /* 设置字体大小 */
+    text-align: center;
+    letter-spacing: 2px;
+}
+
+.crosshair {
+    cursor: crosshair !important; /* 设置鼠标为十字形 */
+}
+
+body {
+    background-color: #D19A6A; /* 棕原木色 */
+    margin: 0; /* 移除默认的页边距 */
+    font-family: Arial, sans-serif; /* 设置字体 */
+}
+
+#map {
+    height: 700px; /* 设置地图的高度 */
+    width: 90%; /* 设置地图的宽度为100% */
+    margin: 0 auto; /* 居中对齐地图 */
+    border-radius: 15px;    /* 设置圆角，您可以根据需要调整圆角大小 */
+    overflow: hidden;       /* 确保内容不会溢出圆角 */
 }

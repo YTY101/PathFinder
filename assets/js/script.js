@@ -5,40 +5,40 @@ var currentPolyline = null;
 var currentSuffix = null;
 
 function drawPath(data){
-    if(startMarker){
-        map.removeLayer(startMarker);
-    }
-    startMarker = L.marker([data["startNodeLat"], data["startNodeLon"]]).addTo(map);
-
-    if(endMarker){
-        map.removeLayer(endMarker);
-    }
-    endMarker = L.marker([data["endNodeLat"], data["endNodeLon"]]).addTo(map);
-
     // 提取经纬度数组
     var latLngs = data["path"].map(function(location) {
         return [location.lat, location.lng];
     });
+
+    clear(); // 清除之前的路径
     // 在地图上添加连线前，检查是否已有 polyline
-    if (currentPolyline) {
-        // 如果已存在 polyline，则从地图上移除
-        map.removeLayer(currentPolyline);
-    }
     currentPolyline = L.polyline(latLngs, { color: 'blue', weight: 5, pane: "markerPane" }).addTo(map);
 
-    if(currentPrefix){
-        map.removeLayer(currentPrefix);
-    }
     var Prefix_latLngs = [[data["startNodeLat"], data["startNodeLon"]], [data["startNeighborLat"], data["startNeighborLon"]]];
     currentPrefix = L.polyline(Prefix_latLngs, { color: 'red', weight: 5, zIndex: 1000 }).addTo(map);
 
-    if(currentSuffix){
-        map.removeLayer(currentSuffix);
-    }
     var Suffix_latLngs = [[data["endNodeLat"], data["endNodeLon"]], [data["endNeighborLat"], data["endNeighborLon"]]];
     currentSuffix = L.polyline(Suffix_latLngs, { color: 'red', weight: 5, zIndex: 1000 }).addTo(map);
 }
 
+function clear(){
+     // 在地图上添加连线前，检查是否已有 polyline
+     if (currentPolyline) {
+        // 如果已存在 polyline，则从地图上移除
+        map.removeLayer(currentPolyline);
+        currentPolyline = null; // 清空 currentPolyline 变量
+    }
+
+    if(currentPrefix){
+        map.removeLayer(currentPrefix);
+        currentPrefix = null; // 清空 currentPrefix 变量
+    }
+
+    if(currentSuffix){
+        map.removeLayer(currentSuffix);
+        currentSuffix = null; // 清空 currentSuffix 变量
+    }
+}
 
 var Buttons = L.Control.extend({
     // 添加控件到地图时调用
@@ -119,6 +119,41 @@ var button_container = new Buttons();
 button_container.addTo(map);
 
 
+// 创建搜索控件
+var SearchControl = L.Control.extend({
+    onAdd: function (map) {
+        // 创建一个容器
+        var container = L.DomUtil.create('div', 'search-container');
+        container.id = "search-container";
+
+        // 创建搜索输入框
+        var searchInput = L.DomUtil.create('input', 'search-input', container);
+        searchInput.placeholder = "搜索地点...";
+
+        // 处理搜索输入事件
+        L.DomEvent.on(searchInput, 'keypress', function (e) {
+            if (e.key === 'Enter') {
+                var query = searchInput.value;
+                console.log('Searching for:', query);
+                // 在这里添加搜索功能逻辑
+            }
+        });
+
+        return container;
+    },
+
+    onRemove: function (map) {
+        // 控件移除时的操作
+    }
+});
+
+// 创建搜索控件实例并添加到地图
+var searchControl = new SearchControl();
+searchControl.addTo(map);
+
+
+
+
 var selecting_start = false;
 var selecting_end = false;
 
@@ -161,14 +196,21 @@ const path_data = {
     endLng: -1,
 }
 
+
 function update() {
     if (selecting_start) {
         // 只有在 selecting_start 为 true 时才定义 clickStart
         if (!clickStart) {
             clickStart = function (e) {
+                clear();
                 var latlng = e.latlng;
                 console.log('Start point selected:', latlng);
-                
+                                
+                if(startMarker){
+                    map.removeLayer(startMarker);
+                }
+                startMarker = L.marker(latlng).addTo(map);
+
                 path_data.startLat = latlng.lat;
                 path_data.startLng = latlng.lng;
                 checkSend();
@@ -194,8 +236,15 @@ function update() {
         // 只有在 selecting_end 为 true 时才定义 clickEnd
         if (!clickEnd) {
             clickEnd = function (e) {
+                clear();
                 var latlng = e.latlng;
                 console.log('End point selected:', latlng);
+
+                if(endMarker){
+                    map.removeLayer(endMarker);
+                }
+                endMarker = L.marker(latlng).addTo(map);            
+
 
                 path_data.endLat = latlng.lat;
                 path_data.endLng = latlng.lng;
