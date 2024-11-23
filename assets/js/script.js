@@ -1,17 +1,42 @@
+var startMarker = null;
+var endMarker = null;
+var currentPrefix = null;
 var currentPolyline = null;
+var currentSuffix = null;
 
 function drawPath(data){
+    if(startMarker){
+        map.removeLayer(startMarker);
+    }
+    startMarker = L.marker([data["startNodeLat"], data["startNodeLon"]]).addTo(map);
+
+    if(endMarker){
+        map.removeLayer(endMarker);
+    }
+    endMarker = L.marker([data["endNodeLat"], data["endNodeLon"]]).addTo(map);
+
     // 提取经纬度数组
-    var latLngs = data.map(function(location) {
+    var latLngs = data["path"].map(function(location) {
         return [location.lat, location.lng];
     });
-
     // 在地图上添加连线前，检查是否已有 polyline
     if (currentPolyline) {
         // 如果已存在 polyline，则从地图上移除
         map.removeLayer(currentPolyline);
     }
-    currentPolyline = L.polyline(latLngs, { color: 'blue' }).addTo(map);
+    currentPolyline = L.polyline(latLngs, { color: 'blue', weight: 5, pane: "markerPane" }).addTo(map);
+
+    if(currentPrefix){
+        map.removeLayer(currentPrefix);
+    }
+    var Prefix_latLngs = [[data["startNodeLat"], data["startNodeLon"]], [data["startNeighborLat"], data["startNeighborLon"]]];
+    currentPrefix = L.polyline(Prefix_latLngs, { color: 'red', weight: 5, zIndex: 1000 }).addTo(map);
+
+    if(currentSuffix){
+        map.removeLayer(currentSuffix);
+    }
+    var Suffix_latLngs = [[data["endNodeLat"], data["endNodeLon"]], [data["endNeighborLat"], data["endNeighborLon"]]];
+    currentSuffix = L.polyline(Suffix_latLngs, { color: 'red', weight: 5, zIndex: 1000 }).addTo(map);
 }
 
 
@@ -29,47 +54,41 @@ var Buttons = L.Control.extend({
         end_btn.id = "end-btn";
         end_btn.innerHTML = "END";
 
-        var test_btn = L.DomUtil.create('button', 'test-btn', button_container);
-        test_btn.id = "test-btn";
-        test_btn.innerHTML = "TEST";
+        // var test_btn = L.DomUtil.create('button', 'test-btn', button_container);
+        // test_btn.id = "test-btn";
+        // test_btn.innerHTML = "TEST";
         
-        L.DomEvent.on(test_btn, 'click', function (e) {
-            e.stopPropagation(); // 阻止事件冒泡
-            console.log('Test');
+        // L.DomEvent.on(test_btn, 'click', function (e) {
+        //     e.stopPropagation(); // 阻止事件冒泡
+        //     console.log('Test');
 
-            //测试逻辑
-            const data = {
-                task: "path",
-                startNodeId: "558631422",
-                endNodeId: "475853969"
-            }
+        //     //测试逻辑
+        //     const data = {
+        //         task: "path",
+        //         startNodeId: "558631422",
+        //         endNodeId: "475853969"
+        //     }
 
-            const jsonData = JSON.stringify(data);
+        //     const jsonData = JSON.stringify(data);
 
-            console.log('发送测试数据:', jsonData);
-            // 发送单个块的请求
-            fetch('http://localhost:8080', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: jsonData
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-                //  // 提取经纬度数组
-                // var latLngs = data.map(function(location) {
-                //     return [location.lat, location.lng];
-                // });
-                // // 在地图上添加连线
-                // var polyline = L.polyline(latLngs, { color: 'blue' }).addTo(map);   
-                drawPath(data); // 调用 drawPath 函数绘制路径
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        });
+        //     console.log('发送测试数据:', jsonData);
+        //     // 发送单个块的请求
+        //     fetch('http://localhost:8080', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json'
+        //         },
+        //         body: jsonData
+        //     })
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         console.log('Success:', data);
+        //         drawPath(data); // 调用 drawPath 函数绘制路径
+        //     })
+        //     .catch((error) => {
+        //         console.error('Error:', error);
+        //     });
+        // });
 
         L.DomEvent.on(start_btn, 'click', function (e) {
             e.stopPropagation(); // 阻止事件冒泡
@@ -114,8 +133,8 @@ function checkSend(){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // 'Accept': 'application/json',
-                // 'Access-Control-Allow-Credentials': 'true'
+                'Accept': 'application/json',
+                'Access-Control-Allow-Credentials': 'true'
             },
             body: jsonPathData
         })
@@ -149,10 +168,6 @@ function update() {
             clickStart = function (e) {
                 var latlng = e.latlng;
                 console.log('Start point selected:', latlng);
-
-                // // 将经纬度转换为字符串
-                // path_data.startLat = String(latlng.lat);
-                // path_data.startLng = String(latlng.lng);
                 
                 path_data.startLat = latlng.lat;
                 path_data.startLng = latlng.lng;
@@ -181,10 +196,6 @@ function update() {
             clickEnd = function (e) {
                 var latlng = e.latlng;
                 console.log('End point selected:', latlng);
-
-                // 将经纬度转换为字符串
-                // path_data.endLat = String(latlng.lat);
-                // path_data.endLng = String(latlng.lng);
 
                 path_data.endLat = latlng.lat;
                 path_data.endLng = latlng.lng;

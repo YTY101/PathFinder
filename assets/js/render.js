@@ -55,6 +55,12 @@ var minlon = 121.2897000;
 var maxlat = 31.3290000;
 var maxlon = 121.6969000;
 
+// 定义矩形的范围
+var bounds = [[minlat, minlon], [maxlat, maxlon]];
+
+// 创建并添加矩形到地图，仅显示边框
+var rectangle = L.rectangle(bounds, { color: "#ff7800", weight: 2, fillOpacity: 0 }).addTo(map);
+
 
 const loadedChunks = {}; // 使用对象作为哈希表来存储已加载的块
 const drawnItems = {}; // 用于存储在地图上绘制的图形
@@ -84,15 +90,15 @@ function requestDataFromServer() {
                 const chunkId = getChunkId(lat, lng);
                 newChunks.add(chunkId);
 
-                // 在每个块的左下角添加文本标注经纬度
-                const latitude = lat.toFixed(6);
-                const longitude = lng.toFixed(6);
-                const label = L.divIcon({
-                    className: 'text-label',
-                    html: `纬度: ${latitude}, 经度: ${longitude}`,
-                    iconSize: [100, 40]
-                });
-                L.marker([lat, lng], { icon: label }).addTo(map);
+                // // 在每个块的左下角添加文本标注经纬度
+                // const latitude = lat.toFixed(6);
+                // const longitude = lng.toFixed(6);
+                // const label = L.divIcon({
+                //     className: 'text-label',
+                //     html: `纬度: ${latitude}, 经度: ${longitude}`,
+                //     iconSize: [100, 40]
+                // });
+                // L.marker([lat, lng], { icon: label }).addTo(map);
             }
         }
 
