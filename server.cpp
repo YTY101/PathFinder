@@ -56,8 +56,14 @@ void handle_request(beast::tcp_stream& stream, http::request<http::string_body>&
         if(request_data.contains("task") && request_data["task"]=="render"){
             response_data = handle_render(request_data);
         }else if(request_data.contains("task") && request_data["task"]=="path"){
+            std::cout<<"handle_path"<<request_data<<std::endl;
             response_data = handle_path(request_data);
         }else if(request_data.contains("task") && request_data["task"]=="select_path"){
+            std::cout<<"handle_select_path"<<request_data<<std::endl;
+            // response_data = {
+            //     {"status", "success"},
+            //     {"received_data", request_data}
+            // };
             response_data = handle_select_path(request_data);
         }else{
         if(LOG)     std::cout<<"Unknown Request"<<std::endl;
@@ -67,11 +73,10 @@ void handle_request(beast::tcp_stream& stream, http::request<http::string_body>&
             };
         }
 
-        
 
         // 将响应数据序列化为字符串
         std::string response_body = response_data.dump();
-        // std::cout<<"Response: "<<response_body<<std::endl<<"END"<<std::endl;;
+        if(!(request_data.contains("task") && request_data["task"]=="render"))std::cout<<"Response: "<<response_body<<std::endl<<"END"<<std::endl;
 
         // 创建HTTP响应
         http::response<http::string_body> res{
@@ -83,7 +88,7 @@ void handle_request(beast::tcp_stream& stream, http::request<http::string_body>&
         // res.set(http::field::access_control_allow_headers, "Content-Type"); // 允许的头部
         res.set(http::field::access_control_allow_methods, "*"); // 允许的方法
         res.set(http::field::access_control_allow_headers, "*"); // 允许的头部
-        // res.set(http::field::access_control_max_age, "3600"); // 预检请求的缓存时间
+        res.set(http::field::access_control_max_age, "3600"); // 预检请求的缓存时间
 
         res.content_length(response_body.size());
         res.body() = std::move(response_body);
@@ -110,7 +115,7 @@ json handle_render(json request_data) {
     json nodes_data = json::array();
     json ways_data = json::array();
 
-    std::cout<<chunk_id<<std::endl;
+    // std::cout<<chunk_id<<std::endl;
 
     // 检查指定的 chunk 是否存在
     if (chunk_map.find(chunk_id) != chunk_map.end()) {
@@ -199,13 +204,14 @@ string find_closest_node(double lat, double lon, const std::string& chunk_id) {
 
 json handle_select_path(json request_data) {
     double start_lat = request_data["startLat"];
-    double start_lon = request_data["startLon"];
+    double start_lon = request_data["startLng"];
     double end_lat = request_data["endLat"];
-    double end_lon = request_data["endLon"];
+    double end_lon = request_data["endLng"];
 
     // 获取起点和终点所在的 Chunk ID
     string start_chunk_id = getChunkKey(start_lat, start_lon);
     string end_chunk_id = getChunkKey(end_lat, end_lon);
+    std::cout<<"start_chunk_id: "<<start_chunk_id<<", end_chunk_id: "<<end_chunk_id<<std::endl;
 
     unordered_map<string, bool> visited;
     visited.clear();
