@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <fstream>
 #include <limits>
+#include <chrono>
+
 #include "server.h"
 #include "read_data.h"
 #include "findpath.h"
@@ -245,14 +247,23 @@ json handle_select_path(json request_data) {
     // std::cout<<"start_chunk_id: "<<start_chunk_id<<", end_chunk_id: "<<end_chunk_id<<std::endl;
 
     unordered_map<string, bool> visited;
+
+
     visited.clear();
     string target_start_chunk_id = getTargetChunk(start_chunk_id, 0, visited).first;
     visited.clear();
     string target_end_chunk_id = getTargetChunk(end_chunk_id, 0, visited).first; 
 
+    std::chrono::time_point<std::chrono::system_clock> start_time, time_point1, time_point2, time_point3;
+    start_time = std::chrono::system_clock::now();
     string closest_start_node_id = find_closest_node(start_lat, start_lon, target_start_chunk_id);
+    time_point1 = std::chrono::system_clock::now();
+    std::chrono::duration<double, std::milli> duration1= time_point1 - start_time;
+    std::cout<<"Found Closest Node1: "<<duration1.count()<<"ms"<<std::endl;
     string closest_end_node_id = find_closest_node(end_lat, end_lon, target_end_chunk_id);
-
+    time_point2 = std::chrono::system_clock::now();
+    std::chrono::duration<double, std::milli> duration2= time_point2 - time_point1;
+    std::cout<<"Found Closest Node2: "<<duration2.count()<<"ms"<<std::endl;
     json response_data = {
         {"status", "success"},
         {"startNodeLat", start_lat},
@@ -265,7 +276,9 @@ json handle_select_path(json request_data) {
         {"endNeighborLon", nodes[closest_end_node_id].lon},
         {"path", aStarSearch(closest_start_node_id, closest_end_node_id)}
     };
-
+    time_point3 = std::chrono::system_clock::now();
+    std::chrono::duration<double, std::milli> duration3= time_point3 - time_point2;
+    std::cout<<"Found Path: "<<duration3.count()<<"ms"<<std::endl;
     return response_data;
 }
 
@@ -295,7 +308,7 @@ json handle_search_location(json request_data) {
 
 void start_server(asio::io_context& ioc, asio::ip::tcp::endpoint endpoint) {
     std::cout << "Loading data..." << std::endl;
-    parseOSM("data/big_map/map.osm", nodes, ways, chunk_map, way_name);
+    parseOSM("data/large_map/map.osm", nodes, ways, chunk_map, way_name);
     std::cout << "Data loaded." << std::endl;
     std::cout<<way_name.size()<<std::endl;
 

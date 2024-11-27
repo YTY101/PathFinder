@@ -21,15 +21,17 @@ json aStarSearch(const std::string& start_id, const std::string& end_id) {
     std::unordered_map<std::string, double> fScore; // 从起点到终点的估计总代价
     std::unordered_map<std::string, bool> openSetMap; // 用于追踪节点是否在开放列表中
 
-    for (const auto& pair : nodes) {
-        gScore[pair.first] = std::numeric_limits<double>::infinity();
-        fScore[pair.first] = std::numeric_limits<double>::infinity();
-    }
+    std::unordered_map<std::string, int> inited;
+    // for (const auto& pair : nodes) {
+    //     gScore[pair.first] = std::numeric_limits<double>::infinity();
+    //     fScore[pair.first] = std::numeric_limits<double>::infinity();
+    // }
 
     gScore[start_id] = 0.0;
     fScore[start_id] = calculateDistance(nodes[start_id], nodes[end_id]);
     openSet.emplace(fScore[start_id], start_id);
     openSetMap[start_id] = true; // 将起点标记为在开放列表中
+    inited[start_id] = 1;
 
     while (!openSet.empty()) {
         std::string current = openSet.top().second;
@@ -48,6 +50,11 @@ json aStarSearch(const std::string& start_id, const std::string& end_id) {
         }
 
         for (const Neighbor& neighbor : neighbors[current]) {
+            if(inited[neighbor.node_id] == 0){
+                gScore[neighbor.node_id] = std::numeric_limits<double>::infinity();
+                fScore[neighbor.node_id] = std::numeric_limits<double>::infinity();
+                inited[neighbor.node_id] = 1;
+            }
             double tentative_gScore = gScore[current] + neighbor.distance;
 
             if (tentative_gScore < gScore[neighbor.node_id]) {
