@@ -20,6 +20,7 @@ using json = nlohmann::json;
 unordered_map<string, Node> nodes;
 unordered_map<string, Way> ways;
 unordered_map<string, Chunk> chunk_map;
+unordered_map<string, string> way_name;
 
 std::mutex node_mutex; // 用于保护共享数据
 bool LOG = false;
@@ -60,13 +61,12 @@ void handle_request(beast::tcp_stream& stream, http::request<http::string_body>&
             response_data = handle_path(request_data);
         }else if(request_data.contains("task") && request_data["task"]=="select_path"){
             std::cout<<"handle_select_path"<<std::endl;
-            // response_data = {
-            //     {"status", "success"},
-            //     {"received_data", request_data}
-            // };
             response_data = handle_select_path(request_data);
+        }else if(request_data.contains("task") && request_data["task"]=="search_location"){
+            std::cout<<"handle_search_location"<<std::endl;
+            response_data = handle_search_location(request_data);
         }else{
-        if(LOG)     std::cout<<"Unknown Request"<<std::endl;
+            if(LOG) std::cout<<"Unknown Request"<<std::endl;
             response_data = {
                 {"status", "success"},
                 {"received_data", request_data}
@@ -269,11 +269,35 @@ json handle_select_path(json request_data) {
     return response_data;
 }
 
+json handle_search_location(json request_data) {
+    string target_tag = request_data["query"];
+    string target_way_id = way_name[target_tag];
+    std::cout<<"target_way_id: "<<target_way_id<<std::endl;
+    json nodes_data = json::array();
+    if(target_tag != ""){
+        for(const auto node_id : ways[target_way_id].node_refs){
+            const auto& node = nodes[node_id];
+            nodes_data.push_back({
+                {"id", node.id},
+                {"lat", node.lat},
+                {"lng", node.lon}
+            });
+        }
+    }
+
+    json response_data = {
+        {"status", "success"},
+        {"targetId", target_way_id},
+        {"target", nodes_data}
+    };
+    return response_data;
+}
 
 void start_server(asio::io_context& ioc, asio::ip::tcp::endpoint endpoint) {
     std::cout << "Loading data..." << std::endl;
-    parseOSM("data/big_map/map.osm", nodes, ways, chunk_map);
+    parseOSM("data/big_map/map.osm", nodes, ways, chunk_map, way_name);
     std::cout << "Data loaded." << std::endl;
+    std::cout<<way_name.size()<<std::endl;
 
     // 打印有效的 Chunk ID 并写入到文件
     ofstream chunksFile("chunks.txt"); // 打开一个名为 chunks.txt 的文件

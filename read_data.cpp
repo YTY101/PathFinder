@@ -82,7 +82,7 @@ double calculateDistance(const Node& node1, const Node& node2) {
 std::unordered_map<std::string, std::vector<Neighbor>> neighbors;
 
 // 解析 OSM 文件的函数
-void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unordered_map<string, Way>& ways, unordered_map<string, Chunk>& chunk_map) {
+void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unordered_map<string, Way>& ways, unordered_map<string, Chunk>& chunk_map, unordered_map<string, string>& way_name) {
     XMLDocument doc;
     XMLError eResult = doc.LoadFile(filename.c_str());
     if (eResult != XML_SUCCESS) {
@@ -142,6 +142,10 @@ void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unorde
             string key = pWayTagElement->Attribute("k");
             string value = pWayTagElement->Attribute("v");
             way.tags.push_back(make_pair(key, value));
+            if(key == "name"){
+                way_name[value] = way.id;
+                // std::cout<<value<<way.id<<std::endl;
+            }
             pWayTagElement = pWayTagElement->NextSiblingElement("tag");
         }
         

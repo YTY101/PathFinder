@@ -60,7 +60,7 @@ string getChunkKey(double lat, double lon);
 std::pair<string, int> getTargetChunk(string chunk_id, int depth, unordered_map<string, bool>& visited);
 
 bool isNodeInChunk(const Node& node, double min_lat, double max_lat, double min_lon, double max_lon);
-void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unordered_map<string, Way>& ways, unordered_map<string, Chunk>& chunk_map);
+void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unordered_map<string, Way>& ways, unordered_map<string, Chunk>& chunk_map, unordered_map<string, string>& way_name);
 
 double calculateDistance(const Node& node1, const Node& node2);
 
