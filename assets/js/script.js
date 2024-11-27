@@ -60,11 +60,6 @@ function clear(){
         currentTarget = null; // 清空 currentTarget 变量
     }
 
-    path_data.startLat = -1;
-    path_data.startLng = -1;
-    path_data.endLat = -1;
-    path_data.endLng = -1;
-
 }
 
 var Buttons = L.Control.extend({
@@ -243,6 +238,7 @@ var isEndListenerAdded = false; // 跟踪是否添加了 end 监听器
 
 const path_data = {
     task: "select_path",
+    mode: "",
     startLat: -1,
     startLng: -1,
     endLat: -1,
