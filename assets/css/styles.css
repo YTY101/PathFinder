@@ -1,4 +1,3 @@
-#map { height: 700px; }
 
 #button-container{
     position: absolute;
@@ -73,9 +72,30 @@ body {
 }
 
 #map {
-    height: 700px; /* 设置地图的高度 */
+    height: 700px; /*设置地图的高度 */
     width: 90%; /* 设置地图的宽度为100% */
     margin: 0 auto; /* 居中对齐地图 */
     border-radius: 15px;    /* 设置圆角，您可以根据需要调整圆角大小 */
     overflow: hidden;       /* 确保内容不会溢出圆角 */
+}
+
+.search-container {
+    position: fixed; /* 相对于地图容器定位 */
+    top: 80%; /* 距离顶部 10 像素 */
+    left:25%; /* 距离左侧 10 像素 */
+    height: 30px;
+    width: 50%;
+    z-index: 1000; /* 确保它位于地图之上 */
+    background: white; /* 背景颜色 */
+    padding: 5px; /* 内边距 */
+    border-radius: 15px; /* 圆角边框 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* 阴影效果 */
+}
+
+.search-input {
+    border: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 15px; /* 圆角边框 */
+
 }

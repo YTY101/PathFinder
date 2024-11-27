@@ -21,9 +21,25 @@ function drawPath(data){
     currentSuffix = L.polyline(Suffix_latLngs, { color: 'red', weight: 5, zIndex: 1000 }).addTo(map);
 }
 
+var currentTarget = null;
+function drawTarget(data){
+    // 提取经纬度数组
+    var latLngs = data["target"].map(function(location) {
+        return [location.lat, location.lng];
+    });
+
+    clear(); // 清除之前的路径
+    // 在地图上添加连线前，检查是否已有 polyline
+    currentTarget = L.polyline(latLngs, { color: 'purple', weight: 5, pane: "markerPane" }).addTo(map);
+    // 设置地图视野中心为第一个点的经纬度
+    if (latLngs.length > 0) {
+        map.setView(latLngs[0], map.getZoom()); // 将视野中心设置为第一个点，同时保持当前缩放级别
+    }
+}
+
 function clear(){
      // 在地图上添加连线前，检查是否已有 polyline
-     if (currentPolyline) {
+    if (currentPolyline) {
         // 如果已存在 polyline，则从地图上移除
         map.removeLayer(currentPolyline);
         currentPolyline = null; // 清空 currentPolyline 变量
@@ -38,6 +54,17 @@ function clear(){
         map.removeLayer(currentSuffix);
         currentSuffix = null; // 清空 currentSuffix 变量
     }
+    
+    if(currentTarget){
+        map.removeLayer(currentTarget);
+        currentTarget = null; // 清空 currentTarget 变量
+    }
+
+    path_data.startLat = -1;
+    path_data.startLng = -1;
+    path_data.endLat = -1;
+    path_data.endLng = -1;
+
 }
 
 var Buttons = L.Control.extend({
@@ -132,10 +159,36 @@ var SearchControl = L.Control.extend({
 
         // 处理搜索输入事件
         L.DomEvent.on(searchInput, 'keypress', function (e) {
+            e.stopPropagation();
             if (e.key === 'Enter') {
                 var query = searchInput.value;
-                console.log('Searching for:', query);
+                // console.log('Searching for:', query);
                 // 在这里添加搜索功能逻辑
+                const search_data = {
+                    task: "search_location",
+                    query: query
+                }
+                const jsonSearchData = JSON.stringify(search_data);
+                console.log('发送搜索数据:', jsonSearchData);
+
+                // 使用fetch API发送POST请求到服务器
+                fetch('http://localhost:8080', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Access-Control-Allow-Credentials': 'true'
+                    },
+                    body: jsonSearchData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    drawTarget(data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
             }
         });
 
