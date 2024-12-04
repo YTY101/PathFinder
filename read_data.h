@@ -13,8 +13,8 @@ struct Node {
     string id;
     double lat;
     double lon;
-    vector<pair<string, string>> tags;  // 用来存储键值对 (k, v)
-
+    // vector<pair<string, string>> tags;  // 用来存储键值对 (k, v)
+    unordered_map<string, string> tags;  // 用来存储键值对 (k, v)
     void print() const {
         cout << "Node ID: " << id << ", Latitude: " << lat << ", Longitude: " << lon << endl;
         for (const auto& tag : tags) {
@@ -27,7 +27,8 @@ struct Node {
 struct Way {
     string id;
     vector<string> node_refs;  // 存储节点的 ID
-    vector<pair<string, string>> tags;  // 用来存储键值对 (k, v)
+    // vector<pair<string, string>> tags;  // 用来存储键值对 (k, v)
+    unordered_map<string, string> tags;  // 用来存储键值对 (k, v)
 
     void print() const {
         cout << "Way ID: " << id << ", Nodes: ";
@@ -55,12 +56,12 @@ struct Chunk {
 
 
 
-
+bool checkChunk(string chunk_id);
 string getChunkKey(double lat, double lon);
 std::pair<string, int> getTargetChunk(string chunk_id, int depth, unordered_map<string, bool>& visited);
 
 bool isNodeInChunk(const Node& node, double min_lat, double max_lat, double min_lon, double max_lon);
-void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unordered_map<string, Way>& ways, unordered_map<string, Chunk>& chunk_map, unordered_map<string, string>& way_name);
+void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unordered_map<string, Way>& ways, unordered_map<string, Chunk>& chunk_map, unordered_map<string, vector<string>>& way_name);
 
 double calculateDistance(const Node& node1, const Node& node2);
 

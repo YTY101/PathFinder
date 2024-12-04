@@ -22,7 +22,7 @@ using json = nlohmann::json;
 unordered_map<string, Node> nodes;
 unordered_map<string, Way> ways;
 unordered_map<string, Chunk> chunk_map;
-unordered_map<string, string> way_name;
+unordered_map<string, vector<string>> way_name;
 
 std::mutex node_mutex; // 用于保护共享数据
 bool LOG = false;
@@ -205,11 +205,14 @@ string find_closest_node(double lat, double lon, const std::string& chunk_id) {
         for (const auto& way : chunk.ways) {
             // 检查当前 way 的标签中是否包含 "highway"
             bool has_highway_tag = false;
-            for (const auto& tag : way.tags) {
-                if (tag.first == "highway") {
-                    has_highway_tag = true;
-                    break; // 找到 "highway" 标签后可以退出循环
-                }
+            // for (const auto& tag : way.tags) {
+            //     if (tag.first == "highway") {
+            //         has_highway_tag = true;
+            //         break; // 找到 "highway" 标签后可以退出循环
+            //     }
+            // }
+            if(way.tags.find("highway")!= way.tags.end()){
+                has_highway_tag = true;
             }
 
             if (has_highway_tag) {
@@ -284,33 +287,87 @@ json handle_select_path(json request_data) {
 
 json handle_search_location(json request_data) {
     string target_tag = request_data["query"];
-    string target_way_id = way_name[target_tag];
-    std::cout<<"target_way_id: "<<target_way_id<<std::endl;
-    json nodes_data = json::array();
+    // string target_way_id = way_name[target_tag];
+    // std::cout<<"target_way_id: "<<target_way_id<<std::endl;
+    json ways_data = json::array();
     if(target_tag != ""){
-        for(const auto node_id : ways[target_way_id].node_refs){
-            const auto& node = nodes[node_id];
-            nodes_data.push_back({
-                {"id", node.id},
-                {"lat", node.lat},
-                {"lng", node.lon}
+        for(const auto& way_id : way_name[target_tag]){
+            json nodes_data = json::array();
+            for(const auto node_id : ways[way_id].node_refs){
+                const auto& node = nodes[node_id];
+                nodes_data.push_back({
+                    {"id", node.id},
+                    {"lat", node.lat},
+                    {"lng", node.lon}
+                });
+            }
+            ways_data.push_back({
+                {"way_id", way_id},
+                {"nodes_data", nodes_data},
+                {"way_tags", ways[way_id].tags}
             });
         }
     }
 
+    // json response_data = {
+    //     {"status", "success"},
+    //     {"targetId", target_way_id},
+    //     {"target", nodes_data}
+    // };
     json response_data = {
         {"status", "success"},
-        {"targetId", target_way_id},
-        {"target", nodes_data}
+        {"targets", ways_data}
     };
     return response_data;
 }
+
+// void start_server(asio::io_context& ioc, asio::ip::tcp::endpoint endpoint) {
+//     std::cout << "Loading data..." << std::endl;
+//     parseOSM("data/large_map/map.osm", nodes, ways, chunk_map, way_name);
+//     std::cout << "Data loaded." << std::endl;
+//     std::cout<<way_name.size()<<std::endl;
+
+//     // 打印有效的 Chunk ID 并写入到文件
+//     ofstream chunksFile("chunks.txt"); // 打开一个名为 chunks.txt 的文件
+//     if (chunksFile.is_open()) {
+//         for (const auto& pair : chunk_map) {
+//             chunksFile << pair.first << endl; // 将 Chunk ID 写入文件
+//         }
+//         chunksFile.close(); // 关闭文件
+//         cout << "有效的 Chunk ID 已写入到 chunks.txt 文件中。" << endl;
+//     } else {
+//         cout << "无法打开文件 chunks.txt 进行写入。" << endl;
+//     }
+
+//     beast::tcp_stream stream(ioc);
+
+//     // 监听端口
+//     asio::ip::tcp::acceptor acceptor(ioc, endpoint);
+//     std::cout << "Server is running on " << endpoint << std::endl;
+
+//     for (;;) {
+//         // 等待客户端连接
+//         acceptor.accept(stream.socket());
+//         if (LOG) std::cout << "Waiting..." << std::endl;
+
+//         // 读取HTTP请求
+//         beast::flat_buffer buffer;
+//         http::request<http::string_body> req;
+//         http::read(stream, buffer, req);
+//          // 创建HTTP响应对象
+//         http::response<http::string_body> res{http::status::ok, req.version()};
+//         // 将处理请求的逻辑放在新的线程中
+//         std::thread([s = std::move(stream), req]() mutable {
+//             handle_request(s, req);
+//         }).detach(); // 使用 detach 让其独立于主线程执行
+//     }
+// }
 
 void start_server(asio::io_context& ioc, asio::ip::tcp::endpoint endpoint) {
     std::cout << "Loading data..." << std::endl;
     parseOSM("data/large_map/map.osm", nodes, ways, chunk_map, way_name);
     std::cout << "Data loaded." << std::endl;
-    std::cout<<way_name.size()<<std::endl;
+    std::cout << way_name.size() << std::endl;
 
     // 打印有效的 Chunk ID 并写入到文件
     ofstream chunksFile("chunks.txt"); // 打开一个名为 chunks.txt 的文件
@@ -324,26 +381,34 @@ void start_server(asio::io_context& ioc, asio::ip::tcp::endpoint endpoint) {
         cout << "无法打开文件 chunks.txt 进行写入。" << endl;
     }
 
-    beast::tcp_stream stream(ioc);
-
     // 监听端口
     asio::ip::tcp::acceptor acceptor(ioc, endpoint);
     std::cout << "Server is running on " << endpoint << std::endl;
 
     for (;;) {
-        // 等待客户端连接
-        acceptor.accept(stream.socket());
-        if (LOG) std::cout << "Waiting..." << std::endl;
+        try {
+            // 创建新的 tcp_stream 对象以接受新连接
+            beast::tcp_stream stream(ioc);
 
-        // 读取HTTP请求
-        beast::flat_buffer buffer;
-        http::request<http::string_body> req;
-        http::read(stream, buffer, req);
-         // 创建HTTP响应对象
-        http::response<http::string_body> res{http::status::ok, req.version()};
-        // 将处理请求的逻辑放在新的线程中
-        std::thread([s = std::move(stream), req]() mutable {
-            handle_request(s, req);
-        }).detach(); // 使用 detach 让其独立于主线程执行
+            // 等待客户端连接
+            acceptor.accept(stream.socket());
+            if (LOG) std::cout << "Waiting..." << std::endl;
+
+            // 读取HTTP请求
+            beast::flat_buffer buffer;
+            http::request<http::string_body> req;
+            http::read(stream, buffer, req);
+            
+            // 将处理请求的逻辑放在新的线程中
+            std::thread([s = std::move(stream), req]() mutable {
+                handle_request(s, req);
+            }).detach(); // 使用 detach 让其独立于主线程执行
+            
+        } catch (const std::exception& e) {
+            // 捕捉异常并输出错误信息，但继续等待下一个连接
+            std::cerr << "Connection Error: " << e.what() << std::endl;
+            // 在这里不需要处理 stream 对象，因为我们会在每次循环开始时创建一个新的 stream。
+        }
     }
 }
+

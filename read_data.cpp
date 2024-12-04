@@ -11,7 +11,7 @@
 #include "server.h"
 #include "read_data.h"
 
-#define CHUNK_SIZE 0.007 // 定义一个 CHUNK_SIZE，单位是经纬度的差值
+#define CHUNK_SIZE 0.010 // 定义一个 CHUNK_SIZE，单位是经纬度的差值
 
 using namespace tinyxml2;
 using namespace std;
@@ -21,6 +21,16 @@ string getChunkKey(double lat, double lon) {
     int lat_index = static_cast<int>(lat / CHUNK_SIZE);
     int lon_index = static_cast<int>(lon / CHUNK_SIZE);
     return to_string(lat_index) + "_" + to_string(lon_index);
+}
+
+bool checkChunk(string chunk_id) {
+    auto chunk = chunk_map[chunk_id];
+    for(auto& way : chunk.ways){
+        if(way.tags["highway"] != ""){
+            return  true;
+        }
+    }
+    return false;
 }
 
 std::pair<string, int> getTargetChunk(string chunk_id, int depth, unordered_map<string, bool>& visited){
@@ -38,7 +48,8 @@ std::pair<string, int> getTargetChunk(string chunk_id, int depth, unordered_map<
     std::getline(ss, token, '_');
     idY = std::stoi(token); // 转换为整数
 
-    if(chunk_map[chunk_id].nodes.size() > 0){
+    // if(chunk_map[chunk_id].nodes.size() > 0){
+    if(checkChunk(chunk_id)) {
         return {chunk_id, depth};
     }else{
         // 检查上下左右的 Chunk
@@ -82,7 +93,7 @@ double calculateDistance(const Node& node1, const Node& node2) {
 std::unordered_map<std::string, std::vector<Neighbor>> neighbors;
 
 // 解析 OSM 文件的函数
-void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unordered_map<string, Way>& ways, unordered_map<string, Chunk>& chunk_map, unordered_map<string, string>& way_name) {
+void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unordered_map<string, Way>& ways, unordered_map<string, Chunk>& chunk_map, unordered_map<string, vector<string>>& way_name) {
     XMLDocument doc;
     XMLError eResult = doc.LoadFile(filename.c_str());
     if (eResult != XML_SUCCESS) {
@@ -105,7 +116,8 @@ void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unorde
         while (pTagElement) {
             string key = pTagElement->Attribute("k");
             string value = pTagElement->Attribute("v");
-            node.tags.push_back(make_pair(key, value));
+            // node.tags.push_back(make_pair(key, value));
+            node.tags[key] = value;
             pTagElement = pTagElement->NextSiblingElement("tag");
         }
 
@@ -141,9 +153,10 @@ void parseOSM(const string& filename, unordered_map<string, Node>& nodes, unorde
         while (pWayTagElement) {
             string key = pWayTagElement->Attribute("k");
             string value = pWayTagElement->Attribute("v");
-            way.tags.push_back(make_pair(key, value));
+            // way.tags.push_back(make_pair(key, value));
+            way.tags[key] = value;
             if(key == "name"){
-                way_name[value] = way.id;
+                way_name[value].push_back(way.id);
                 // std::cout<<value<<way.id<<std::endl;
             }
             pWayTagElement = pWayTagElement->NextSiblingElement("tag");
