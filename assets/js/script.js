@@ -21,16 +21,92 @@ function drawPath(data){
     currentSuffix = L.polyline(Suffix_latLngs, { color: 'red', weight: 5, zIndex: 1000 }).addTo(map);
 }
 
+var currentTargets = [];
 var currentTarget = null;
-function drawTarget(data){
+var currentTarget_line = null;
+// function drawTarget(data){
+//     currentTargets = [];
+//     for (var targetKey in data["targets"]) {
+//         var target = data["targets"][targetKey]; // 正确获取 target 对象
+//         currentTargets.push(target);
+        
+//         // 提取经纬度数组
+//         var latLngs = target["nodes_data"].map(function(location) {
+//             return [location.lat, location.lng];
+//         });
+    
+//         clear(); // 清除之前的路径
+//         // 在地图上添加连线前，检查是否已有 polyline
+//         currentTarget = L.polyline(latLngs, { color: 'purple', weight: 5, pane: "markerPane" }).addTo(map);
+//         // 设置地图视野中心为第一个点的经纬度
+//         if (latLngs.length > 0) {
+//             map.setView(latLngs[0], map.getZoom()); // 将视野中心设置为第一个点，同时保持当前缩放级别
+//         }
+//     }
+//     console.log("找到的目标：", currentTargets);
+// }
+
+function drawTargets(data) {
+    currentTargets = [];
+    
+    // 清空之前的目标显示行（如果存在）
+    if (document.getElementById('target-info')) {
+        document.getElementById('target-info').remove();
+    }
+
+    // 创建目标显示行
+    var targetInfo = L.DomUtil.create('div', 'target-info', map.getContainer());
+    targetInfo.id = 'target-info';
+    targetInfo.style.position = 'absolute';
+    targetInfo.style.top = '10px'; // 根据需求调整位置
+    targetInfo.style.right = '10px'; // 根据需求调整位置
+    targetInfo.style.backgroundColor = 'white'; // 设置背景颜色
+    targetInfo.style.padding = '5px';
+    targetInfo.style.zIndex = '9999'; // 确保显示在最上层
+
+    var targetCountText = document.createElement('span');
+    targetCountText.innerHTML = '找到的目标数: ' + Object.keys(data["targets"]).length + ' ';
+    targetInfo.appendChild(targetCountText);
+
+    var nextTargetBtn = L.DomUtil.create('button', 'next-target-btn', targetInfo);
+    nextTargetBtn.innerHTML = '下一个目标';
+    nextTargetBtn.onclick = function() {
+        if (currentTargets.length > 0) {
+            // 切换到下一个目标
+            let currentIndex = currentTargets.indexOf(currentTarget) + 1;
+            console.log("当前目标索引:", currentIndex);
+            if (currentIndex >= currentTargets.length) {
+                currentIndex = 0; // 回到第一个目标
+            }
+            currentTarget = currentTargets[currentIndex];
+            drawTarget(currentTarget);
+            console.log("当前目标:", currentTarget);
+            // 你可以在这里添加逻辑来绘制当前目标
+        }
+    };
+
+    // 遍历数据以获取目标
+    for (var targetKey in data["targets"]) {
+        var target = data["targets"][targetKey]; // 正确获取 target 对象
+        currentTargets.push(target);   
+    }
+    console.log("找到的目标：", currentTargets);
+    
+    if(currentTargets.length > 0){
+        currentTarget = currentTargets[0];
+        drawTarget(currentTarget);
+        console.log("当前目标:", currentTarget);
+    }
+}
+
+function drawTarget(target){
     // 提取经纬度数组
-    var latLngs = data["target"].map(function(location) {
+    var latLngs = target["nodes_data"].map(function(location) {
         return [location.lat, location.lng];
     });
-
     clear(); // 清除之前的路径
     // 在地图上添加连线前，检查是否已有 polyline
-    currentTarget = L.polyline(latLngs, { color: 'purple', weight: 5, pane: "markerPane" }).addTo(map);
+    currentTarget_line = L.polyline(latLngs, { color: 'purple', weight: 5, pane: "markerPane" }).addTo(map);
     // 设置地图视野中心为第一个点的经纬度
     if (latLngs.length > 0) {
         map.setView(latLngs[0], map.getZoom()); // 将视野中心设置为第一个点，同时保持当前缩放级别
@@ -55,9 +131,9 @@ function clear(){
         currentSuffix = null; // 清空 currentSuffix 变量
     }
     
-    if(currentTarget){
-        map.removeLayer(currentTarget);
-        currentTarget = null; // 清空 currentTarget 变量
+    if(currentTarget_line){
+        map.removeLayer(currentTarget_line);
+        currentTarget_line = null; // 清空 currentTarget 变量
     }
 
 }
@@ -179,7 +255,7 @@ var SearchControl = L.Control.extend({
                 .then(response => response.json())
                 .then(data => {
                     console.log('Success:', data);
-                    drawTarget(data);
+                    drawTargets(data);
                 })
                 .catch((error) => {
                     console.error('Error:', error);
