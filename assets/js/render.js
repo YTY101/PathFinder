@@ -123,7 +123,7 @@ function requestDataFromServer() {
                     // 计算每个已加载块的距离
                     const distances = Object.keys(loadedChunks).map(chunkId => {
                         const [lat, lng] = chunkId.split('_').map(Number);
-                        const distance = bounds.getNorthEast().distanceTo([lat, lng]) || 0;
+                        const distance = bounds.getNorthEast().distanceTo([lat, lng + CHUNK_SIZE]) || 0;
                         return { chunkId, distance };
                     });
 
@@ -134,7 +134,8 @@ function requestDataFromServer() {
                     delete loadedChunks[farthestChunkId]; // 删除最远的块
                     // 同时移除绘制的图形（如果存在）
                     if (drawnItems[farthestChunkId]) {
-                        drawnItems[farthestChunkId].forEach(polyline => {
+                        console.log("应当被移除的块信息", drawnItems[farthestChunkId][0].length, drawnItems[farthestChunkId]);
+                        drawnItems[farthestChunkId][0].forEach(polyline => {
                             map.removeLayer(polyline); // 从地图上移除对应的图形
                             console.log("移除绘制的图形", farthestChunkId);
                         });
@@ -186,7 +187,8 @@ function processRequests() {
                     if (way.tags && way.tags.highway && latlngs.length > 0) {
                         const polyline = L.polyline(latlngs, { color: 'yellow' }).addTo(map); // 绘制路径
                         wayPolylines.push(polyline); // 保存到数组中
-                        map.removeLayer(wayPolylines[wayPolylines.length - 1]); // 从地图上移除对应的图形
+                        // map.removeLayer(wayPolylines[wayPolylines.length - 1]); // 从地图上移除对应的图形
+                        // wayPolylines.pop(); // 从数组中移除
                     }
                 });
             }
@@ -214,7 +216,7 @@ function processRequests() {
 }
 
 // 监听地图视图变化事件，以便在用户缩放或平移地图时请求数据
-// map.on('moveend', requestDataFromServer);
+map.on('moveend', requestDataFromServer);
 
 
 // // 绘制数据到前端地图
