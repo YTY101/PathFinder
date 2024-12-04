@@ -23,28 +23,9 @@ function drawPath(data){
 
 var currentTargets = [];
 var currentTarget = null;
+
+var Lines = [];
 var currentTarget_line = null;
-// function drawTarget(data){
-//     currentTargets = [];
-//     for (var targetKey in data["targets"]) {
-//         var target = data["targets"][targetKey]; // 正确获取 target 对象
-//         currentTargets.push(target);
-        
-//         // 提取经纬度数组
-//         var latLngs = target["nodes_data"].map(function(location) {
-//             return [location.lat, location.lng];
-//         });
-    
-//         clear(); // 清除之前的路径
-//         // 在地图上添加连线前，检查是否已有 polyline
-//         currentTarget = L.polyline(latLngs, { color: 'purple', weight: 5, pane: "markerPane" }).addTo(map);
-//         // 设置地图视野中心为第一个点的经纬度
-//         if (latLngs.length > 0) {
-//             map.setView(latLngs[0], map.getZoom()); // 将视野中心设置为第一个点，同时保持当前缩放级别
-//         }
-//     }
-//     console.log("找到的目标：", currentTargets);
-// }
 
 function drawTargets(data) {
     currentTargets = [];
@@ -65,38 +46,60 @@ function drawTargets(data) {
     targetInfo.style.zIndex = '9999'; // 确保显示在最上层
 
     var targetCountText = document.createElement('span');
-    targetCountText.innerHTML = '找到的目标数: ' + Object.keys(data["targets"]).length + ' ';
-    targetInfo.appendChild(targetCountText);
+    
+    
+    var is_highway = "highway" in data["targets"][0]["way_tags"];
+    // console.log("Tags数据：", data["targets"][0]["way_tags"]);
+    console.log("是否为高速路：", is_highway);
+    if (is_highway) {
+        targetCountText.innerHTML = '找到的目标数: ' + '1' + ' ';
+        targetInfo.appendChild(targetCountText);
+        var nextTargetBtn = L.DomUtil.create('button', 'next-target-btn', targetInfo);
+        nextTargetBtn.innerHTML = '下一个目标';
+        
+        clear(); // 清除之前的路径
+        for (var targetKey in data["targets"]){
+            var target = data["targets"][targetKey]; // 正确获取 target 对象
+            drawTarget(target);
+            currentTargets.push(target);   
+        }
+    }else{
+        targetCountText.innerHTML = '找到的目标数: ' + Object.keys(data["targets"]).length + ' ';
+        targetInfo.appendChild(targetCountText);
 
-    var nextTargetBtn = L.DomUtil.create('button', 'next-target-btn', targetInfo);
-    nextTargetBtn.innerHTML = '下一个目标';
-    nextTargetBtn.onclick = function() {
-        if (currentTargets.length > 0) {
-            // 切换到下一个目标
-            let currentIndex = currentTargets.indexOf(currentTarget) + 1;
-            console.log("当前目标索引:", currentIndex);
-            if (currentIndex >= currentTargets.length) {
-                currentIndex = 0; // 回到第一个目标
+        var nextTargetBtn = L.DomUtil.create('button', 'next-target-btn', targetInfo);
+        nextTargetBtn.innerHTML = '下一个目标';
+        nextTargetBtn.onclick = function() {
+            if (currentTargets.length > 0) {
+                // 切换到下一个目标
+                let currentIndex = currentTargets.indexOf(currentTarget) + 1;
+                console.log("当前目标索引:", currentIndex);
+                if (currentIndex >= currentTargets.length) {
+                    currentIndex = 0; // 回到第一个目标
+                }
+                currentTarget = currentTargets[currentIndex];
+                clear(); // 清除之前的路径
+                drawTarget(currentTarget);
+                console.log("当前目标:", currentTarget);
+                // 你可以在这里添加逻辑来绘制当前目标
             }
-            currentTarget = currentTargets[currentIndex];
+        };
+
+        // 遍历数据以获取目标
+        for (var targetKey in data["targets"]) {
+            var target = data["targets"][targetKey]; // 正确获取 target 对象
+            currentTargets.push(target);   
+        }
+
+        console.log("找到的目标：", currentTargets);
+        
+        if(currentTargets.length > 0){
+            currentTarget = currentTargets[0];
+            clear(); // 清除之前的路径
             drawTarget(currentTarget);
             console.log("当前目标:", currentTarget);
-            // 你可以在这里添加逻辑来绘制当前目标
         }
-    };
-
-    // 遍历数据以获取目标
-    for (var targetKey in data["targets"]) {
-        var target = data["targets"][targetKey]; // 正确获取 target 对象
-        currentTargets.push(target);   
-    }
-    console.log("找到的目标：", currentTargets);
-    
-    if(currentTargets.length > 0){
-        currentTarget = currentTargets[0];
-        drawTarget(currentTarget);
-        console.log("当前目标:", currentTarget);
-    }
+    }    
 }
 
 function drawTarget(target){
@@ -104,9 +107,8 @@ function drawTarget(target){
     var latLngs = target["nodes_data"].map(function(location) {
         return [location.lat, location.lng];
     });
-    clear(); // 清除之前的路径
-    // 在地图上添加连线前，检查是否已有 polyline
     currentTarget_line = L.polyline(latLngs, { color: 'purple', weight: 5, pane: "markerPane" }).addTo(map);
+    Lines.push(currentTarget_line);
     // 设置地图视野中心为第一个点的经纬度
     if (latLngs.length > 0) {
         map.setView(latLngs[0], map.getZoom()); // 将视野中心设置为第一个点，同时保持当前缩放级别
@@ -131,11 +133,16 @@ function clear(){
         currentSuffix = null; // 清空 currentSuffix 变量
     }
     
-    if(currentTarget_line){
-        map.removeLayer(currentTarget_line);
-        currentTarget_line = null; // 清空 currentTarget 变量
+    // if(currentTarget_line){
+    //     map.removeLayer(currentTarget_line);
+    //     currentTarget_line = null; // 清空 currentTarget 变量
+    // }
+    if(Lines.length > 0){
+        for(var i = 0; i < Lines.length; i++){
+            map.removeLayer(Lines[i]);
+        }
+        Lines = []; // 清空 Lines 数组
     }
-
 }
 
 var Buttons = L.Control.extend({
@@ -151,42 +158,6 @@ var Buttons = L.Control.extend({
         var end_btn = L.DomUtil.create('button', 'end-btn', button_container);
         end_btn.id = "end-btn";
         end_btn.innerHTML = "END";
-
-        // var test_btn = L.DomUtil.create('button', 'test-btn', button_container);
-        // test_btn.id = "test-btn";
-        // test_btn.innerHTML = "TEST";
-        
-        // L.DomEvent.on(test_btn, 'click', function (e) {
-        //     e.stopPropagation(); // 阻止事件冒泡
-        //     console.log('Test');
-
-        //     //测试逻辑
-        //     const data = {
-        //         task: "path",
-        //         startNodeId: "558631422",
-        //         endNodeId: "475853969"
-        //     }
-
-        //     const jsonData = JSON.stringify(data);
-
-        //     console.log('发送测试数据:', jsonData);
-        //     // 发送单个块的请求
-        //     fetch('http://localhost:8080', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json'
-        //         },
-        //         body: jsonData
-        //     })
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         console.log('Success:', data);
-        //         drawPath(data); // 调用 drawPath 函数绘制路径
-        //     })
-        //     .catch((error) => {
-        //         console.error('Error:', error);
-        //     });
-        // });
 
         L.DomEvent.on(start_btn, 'click', function (e) {
             e.stopPropagation(); // 阻止事件冒泡
